@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<!-- saved from url=(0046)https://lang-ship.com/dev/WebSerialAPI/01.html -->
+<html lang="ja">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Haptics Finger Sensor</title>
+    <style>
+        html {
+            font-family: Helvetica;
+            display: inline-block;
+            margin: 0px auto;
+            text-align: center;
+        }
+
+        body {
+            background-color: #808080;
+            color: #C00000;
+        }
+
+        p {
+            font-size: 19px;
+            color: #fff;
+        }
+
+        .default {
+            font-size: 20px;
+            color: #2196F3;
+        }
+    </style>
+
+</head>
+
+<body bgcolor="black">
+
+    <center>
+
+        <canvas id="canvas2" width="1000" height="750" style="background-color: #C0C0C0;"></canvas>
+        /<br />
+
+        <button id="connect">Connect BLE Device</button>
+        <p>受信データ: <span id="data">---</span></p>
+
+	<<br />
+
+	<textarea cols="120" rows="6" id="outputArea" readonly=""></textarea>
+        <br />
+
+        <canvas id="canvas" width="800" height="150" style="background-color: #C0C0C0;"></canvas>
+
+    </center>
+
+    <br>
+
+    <script>
+        const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
+        const CHAR_UUID    = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
+
+        var dat = "";
+        let port;
+
+        // now they are globals
+        var canvasElem2 = document.getElementById('canvas2');
+        var ctx2 = canvasElem2.getContext('2d');
+
+        var img = new Image();
+        img.src = "hand.png";
+
+        // called once on startup(with delay)
+        img.onload = function () {
+            ctx2.drawImage(img, 0, 0, canvasElem2.width, canvasElem2.height);
+        }
+
+/*
+        async function onConnectButtonClick() {
+            try {
+                port = await navigator.serial.requestPort();
+                await port.open({ baudRate: 115200 });
+
+                while (port.readable) {
+                    const reader = port.readable.getReader();
+
+                    try {
+                        while (true) {
+                            const { value, done } = await reader.read();
+                            if (done) {
+                                addSerial("Canceled\n");
+                                break;
+                            }
+                            const inputValue = new TextDecoder().decode(value);
+                            console.log(inputValue);
+                            if (inputValue.substr(-1) == "\n") {
+                                addSerial(dat);
+                                //console.log(dat);
+                                drawBall(dat);
+                                dat = "";
+                            }
+                        }
+                    } catch (error) {
+                        addSerial("Error: Read" + error + "\n");
+                    } finally {
+                        reader.releaseLock();
+                    }
+                }
+            } catch (error) {
+                addSerial("Error: Open" + error + "\n");
+            }
+        }
+
+*/
+        document.getElementById('connect').addEventListener('click', async () => {
+            try {
+                // デバイスの選択
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ services: [SERVICE_UUID] }]
+                });
+
+                // サーバーへの接続
+                const server = await device.gatt.connect();
+                const service = await server.getPrimaryService(SERVICE_UUID);
+                const characteristic = await service.getCharacteristic(CHAR_UUID);
+
+                // 通知の開始
+                await characteristic.startNotifications();
+                characteristic.addEventListener('characteristicvaluechanged', (event) => {
+                    const value = new TextDecoder().decode(event.target.value);
+                    drawBall(value);
+
+//                    document.getElementById('data').innerText = value;
+                    document.getElementById('outputArea').innerText = value;
+               });
+            } catch (error) {
+                console.log(error);
+            }
+        });
+
+        var bufferLine = 20;
+        var textBuff = new Array(bufferLine);
+        textBuff.fill("");
+        function addSerial(msg) {
+            for (var i = bufferLine - 1; i > 0; i--) {
+                textBuff[i] = textBuff[i-1];
+            }
+            textBuff[0] = msg;
+            var textarea = document.getElementById('outputArea');
+            textarea.value = "";
+            for (var i = bufferLine - 1; i >= 0; i--) {
+                textarea.value += textBuff[i];
+            }
+             textarea.scrollTop = textarea.scrollHeight;
+        }
+
+        var dataWidth = 50;
+        var dispWidth = 800;
+        var dispHeight = 145;
+        var mulX = dispWidth / dataWidth;
+
+        var dd = [];
+        for (var i = 0; i < 8; i++) dd.push(Array(dataWidth));
+
+        
+/*        function drawBall(dat) {
+
+            var res = dat.split(" ");
+ 
+            if (res[0] != "P") {
+                return;
+            }
+
+           int n=0;
+
+            ctx2.clearRect(0, 0, canvasElem2.width, canvasElem2.height);
+
+            ctx2.drawImage(img, 0, 0, canvasElem2.width, canvasElem2.height);
+
+            drawBallOne(0,  res[1]);
+            drawBallOne(1,  res[2]);
+            drawBallOne(2,  res[3]);
+            drawBallOne(3,  res[4]);
+            drawBallOne(4,  res[5]);
+            drawBallOne(5,  res[6]);
+            drawBallOne(6,  res[7]);
+            drawBallOne(7,  res[8]);
+        }
+*/
+
+        function drawBall(dat) {
+
+             console.log (dat);
+ 
+            if (dat != "P") {
+                int n=0;
+                return;
+            }
+
+            ctx2.clearRect(0, 0, canvasElem2.width, canvasElem2.height);
+
+            ctx2.drawImage(img, 0, 0, canvasElem2.width, canvasElem2.height);
+
+          if (n=0)     {drawBallOne(0,  dat);}
+          else if (n=1){drawBallOne(1,  dat);}
+          else if (n=2){drawBallOne(2,  dat);}
+          else if (n=3){drawBallOne(3,  dat);}
+          else if (n=4){drawBallOne(4,  dat);}
+          else if (n=5){drawBallOne(5,  dat);}
+          else if (n=6){drawBallOne(6,  dat);}
+          else if (n=7){drawBallOne(7,  dat);}
+        }
+
+        function drawBallOne(id, val) {
+
+            var minIr = 95000;
+            var maxIr = 140000;
+            var rangeIr = maxIr - minIr;
+            var maxRadius = 50;
+
+            //////////
+            ctx2.font = "22px Helvetica";
+
+            var cx, cy;
+
+            var radius = Math.trunc((val - minIr) * maxRadius / rangeIr);
+            if (radius < 0 ) radius = 0;					//20250903 suzuki
+//            var col = radius * 3;
+            var col = radius * 1;
+            if (col > 255) col = 255;
+
+            if (id == 0) {
+                ctx2.strokeStyle = "rgb(0 255 0)";
+                ctx2.fillStyle = "rgb(0 " + col + " 0)";
+                cx = 100;
+                cy = 360;
+            }
+            else if (id == 1) {
+                ctx2.strokeStyle = "rgb(0 255 0)";
+                ctx2.fillStyle = "rgb(0 " + col + " 0)";
+                cx = 100;
+                cy = 380;
+            }
+            else if (id == 2) {
+                ctx2.strokeStyle = "rgb(0 255 0)";
+                ctx2.fillStyle = "rgb(0 " + col + " 0)";
+                cx = 100;
+                cy = 400;
+            }
+            else if (id == 3) {
+                ctx2.strokeStyle = "rgb(0 255 0)";
+                ctx2.fillStyle = "rgb(0 " + col + " 0)";
+                cx = 100;
+                cy = 420;
+            }
+            else if (id == 4) {
+                ctx2.strokeStyle = "rgb(0 255 0)";
+                ctx2.fillStyle = "rgb(0 " + col + " 0)";
+                cx = 120;
+                cy = 360;
+            }
+            else if (id == 5) {
+                ctx2.strokeStyle = "rgb(0 255 0)";
+                ctx2.fillStyle = "rgb(0 " + col + " 0)";
+                cx = 120;
+                cy = 380;
+            }
+            else if (id == 6) {
+                ctx2.strokeStyle = "rgb(0 255 0)";
+                ctx2.fillStyle = "rgb(0 " + col + " 0)";
+                cx = 120;
+                cy = 400;
+            }
+            else if (id == 7) {
+                ctx2.strokeStyle = "rgb(0 255 0)";
+                ctx2.fillStyle = "rgb(0 " + col + " 0)";
+                cx = 120;
+                cy = 420;
+            }
+
+//            console.log(radius);
+
+
+            ctx2.beginPath();
+            ctx2.arc(cx, cy, radius, 0, 2 * Math.PI);
+            ctx2.closePath();
+            ctx2.fill();
+
+        }
+
+    </script>
+  </body>
+</html>
